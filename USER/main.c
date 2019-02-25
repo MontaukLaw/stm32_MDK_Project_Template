@@ -22,29 +22,42 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x.h"
 #include <stdio.h>
+void setup(void);
 
 void Delay(u32 count){
   u32 i=0;
 	for(;i<count;i++);
 }
 
-int main(void){
+void setup(void){
   GPIO_InitTypeDef GPIO_InitStructure;
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_GPIOE,ENABLE);
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC|RCC_APB2Periph_GPIOA,ENABLE);
+	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_13;
 	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_Init(GPIOB,&GPIO_InitStructure);
-	GPIO_SetBits(GPIOB,GPIO_Pin_5);
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
-	GPIO_Init(GPIOE,&GPIO_InitStructure);
-	GPIO_SetBits(GPIOE,GPIO_Pin_5);
+	//初始化C13
+	GPIO_Init(GPIOC,&GPIO_InitStructure);
+	//初始化A5
+	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;	
+	GPIO_Init(GPIOA,&GPIO_InitStructure);
+	//初始化引脚状态
+	GPIO_SetBits(GPIOC,GPIO_Pin_13);
+	GPIO_SetBits(GPIOA,GPIO_Pin_5);
+	//GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
+	//GPIO_Init(GPIOE,&GPIO_InitStructure);
+	//GPIO_SetBits(GPIOE,GPIO_Pin_5);
+}
+
+int main(void){
+  setup();
 	while(1){
-	  GPIO_ResetBits(GPIOB,GPIO_Pin_5);
-		GPIO_SetBits(GPIOE,GPIO_Pin_5);
+	  GPIO_ResetBits(GPIOC,GPIO_Pin_13);
+		GPIO_ResetBits(GPIOA,GPIO_Pin_5);
+		//GPIO_SetBits(GPIOE,GPIO_Pin_5);
 		Delay(3000000);
-		GPIO_SetBits(GPIOB,GPIO_Pin_5);
-		GPIO_ResetBits(GPIOE,GPIO_Pin_5);
+		GPIO_SetBits(GPIOC,GPIO_Pin_13);
+		GPIO_SetBits(GPIOA,GPIO_Pin_5);		
+		//GPIO_ResetBits(GPIOE,GPIO_Pin_5);
 		Delay(3000000);
 	}
 }
