@@ -31,3 +31,7 @@
 .\obj\usart.o: .\STM32F10x_FWLib\inc\misc.h
 .\obj\usart.o: SYSTEM\usart\usart.h
 .\obj\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\obj\usart.o: .\SYSTEM\comunication\upcom.h
+.\obj\usart.o: .\SYSTEM\tasks\door_task.h
+.\obj\usart.o: .\HARDWARE\DOOR\door.h
+.\obj\usart.o: .\SYSTEM\delay\delay.h

@@ -29,3 +29,17 @@
 .\obj\main.o: .\STM32F10x_FWLib\inc\stm32f10x_wwdg.h
 .\obj\main.o: .\STM32F10x_FWLib\inc\misc.h
 .\obj\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\obj\main.o: .\SYSTEM\delay\delay.h
+.\obj\main.o: .\SYSTEM\sys\sys.h
+.\obj\main.o: .\SYSTEM\usart\usart.h
+.\obj\main.o: .\SYSTEM\sys\cmd.h
+.\obj\main.o: .\HARDWARE\LED\led.h
+.\obj\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\obj\main.o: .\HARDWARE\TIMER\timer.h
+.\obj\main.o: .\SYSTEM\tasks\tasks.h
+.\obj\main.o: .\SYSTEM\tasks\com_task.h
+.\obj\main.o: .\SYSTEM\comunication\upcom.h
+.\obj\main.o: .\SYSTEM\tasks\door_task.h
+.\obj\main.o: .\HARDWARE\DOOR\door.h
+.\obj\main.o: .\SYSTEM\tasks\led_task.h
+.\obj\main.o: .\SYSTEM\sys\test.h

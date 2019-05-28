@@ -22,42 +22,82 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x.h"
 #include <stdio.h>
-void setup(void);
+#include "delay.h"
+#include "usart.h"
+#include "cmd.h"
+#include "led.h"
+#include "string.h"
+#include "timer.h"
+#include "tasks.h"
+#include "door.h"
 
-void Delay(u32 count){
-  u32 i=0;
-	for(;i<count;i++);
+#include "test.h"
+
+extern u8 txBuffer[];
+
+void test(void){
+    
+    //if(DOOR_CLOSED){
+        //nop();    
+    //}else{
+        //nop();
+    //};
+    
+    //unitTest1();
 }
 
 void setup(void){
-  GPIO_InitTypeDef GPIO_InitStructure;
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC|RCC_APB2Periph_GPIOA,ENABLE);
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_13;
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	//初始化C13
-	GPIO_Init(GPIOC,&GPIO_InitStructure);
-	//初始化A5
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;	
-	GPIO_Init(GPIOA,&GPIO_InitStructure);
-	//初始化引脚状态
-	GPIO_SetBits(GPIOC,GPIO_Pin_13);
-	GPIO_SetBits(GPIOA,GPIO_Pin_5);
-	//GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
-	//GPIO_Init(GPIOE,&GPIO_InitStructure);
-	//GPIO_SetBits(GPIOE,GPIO_Pin_5);
+    delay_init();
+    //Switch_Init();
+	uart_init(9600);
+    LED_Init();
+    //Door_Init(); 
+
+    //ledOn(25);    
+    
+    //定时器初始化
+  	TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到500为50ms  
+    
+    Get_ChipID();
+    
+    test();
 }
 
+
 int main(void){
-  setup();
-	while(1){
-	  GPIO_ResetBits(GPIOC,GPIO_Pin_13);
-		GPIO_ResetBits(GPIOA,GPIO_Pin_5);
-		//GPIO_SetBits(GPIOE,GPIO_Pin_5);
-		Delay(3000000);
-		GPIO_SetBits(GPIOC,GPIO_Pin_13);
-		GPIO_SetBits(GPIOA,GPIO_Pin_5);		
-		//GPIO_ResetBits(GPIOE,GPIO_Pin_5);
-		Delay(3000000);
+    
+    setup();  
+    
+    unitTest2();
+    
+    while(1){
+    
+    }
+    
+    while(0){
+        LED_WORKING = 0;
+        delay_ms(999); 
+        LED_WORKING = 1;
+        delay_ms(999); 
+        //openDoor(1);
+        //delay_ms(999);                
+        //delay_ms(999); 
+    }
+
+
+    
+
+}
+
+
+//定时器3中断服务程序, 也算是一个小OS
+void TIM3_IRQHandler(void)   //TIM3中断
+{
+	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //检查TIM3更新中断发生与否
+    {
+		TIM_ClearITPendingBit(TIM3, TIM_IT_Update  );  //清除TIMx更新中断标志 
+		runTasks();
+        //LED1=!LED1;
 	}
 }
+
