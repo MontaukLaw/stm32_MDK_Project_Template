@@ -37,3 +37,6 @@
 .\obj\com_task.o: .\HARDWARE\DOOR\door.h
 .\obj\com_task.o: .\SYSTEM\delay\delay.h
 .\obj\com_task.o: .\HARDWARE\LED\led.h
+.\obj\com_task.o: .\SYSTEM\sys\test.h
+.\obj\com_task.o: .\SYSTEM\tasks\com_task.h
+.\obj\com_task.o: .\HARDWARE\SENSOR\sensor.h

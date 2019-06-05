@@ -41,5 +41,7 @@
 .\obj\main.o: .\SYSTEM\comunication\upcom.h
 .\obj\main.o: .\SYSTEM\tasks\door_task.h
 .\obj\main.o: .\HARDWARE\DOOR\door.h
-.\obj\main.o: .\SYSTEM\tasks\led_task.h
 .\obj\main.o: .\SYSTEM\sys\test.h
+.\obj\main.o: .\SYSTEM\tasks\com_task.h
+.\obj\main.o: .\HARDWARE\SENSOR\sensor.h
+.\obj\main.o: .\SYSTEM\tasks\led_task.h

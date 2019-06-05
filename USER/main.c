@@ -30,7 +30,7 @@
 #include "timer.h"
 #include "tasks.h"
 #include "door.h"
-
+#include "sensor.h"
 #include "test.h"
 
 extern u8 txBuffer[];
@@ -43,14 +43,24 @@ void test(void){
         //nop();
     //};
     
-    //unitTest1();
+    
 }
 
 void setup(void){
+    
     delay_init();
     //Switch_Init();
-	uart_init(9600);
+	uart1_init(9600);
+    
+    uart2_init(9600);
+
+    uart4_init(9600);
+
+    uart5_init(9600);    
+    
     LED_Init();
+    
+    sensorInit();
     //Door_Init(); 
 
     //ledOn(25);    
@@ -68,10 +78,12 @@ int main(void){
     
     setup();  
     
-    unitTest2();
+    //unitTest2();
+    //problemTest();
+
     
     while(1){
-    
+        //keepLightSensorTest();   
     }
     
     while(0){

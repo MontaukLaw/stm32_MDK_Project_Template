@@ -38,3 +38,5 @@
 .\obj\test.o: .\SYSTEM\comunication\upcom.h
 .\obj\test.o: .\SYSTEM\tasks\door_task.h
 .\obj\test.o: .\HARDWARE\DOOR\door.h
+.\obj\test.o: .\SYSTEM\sys\test.h
+.\obj\test.o: .\HARDWARE\SENSOR\sensor.h

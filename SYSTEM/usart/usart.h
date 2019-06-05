@@ -18,11 +18,11 @@
 //V1.5修改说明
 //1,增加了对UCOSII的支持
 
-#define USART_REC_LEN  			500  	//定义最大接收字节数 200
+#define USART_REC_LEN  			100  	//定义最大接收字节数 200
 #define BT_BUF_LEN    100
 
 #define EN_USART1_RX 			1		//使能（1）/禁止（0）串口1接收
-#define TX_MAX_LENGTH      200   //usar2 send bytes
+#define TX_MAX_LENGTH      100   //usar2 send bytes
 
 #define TRANS_NONE  0
 #define TRANS_HALFSTART  1
@@ -36,11 +36,21 @@
 extern u8  USART_RX_BUF[USART_REC_LEN]; //接收缓冲,最大USART_REC_LEN个字节.末字节为换行符 
 extern u16 USART_RX_STA;         		//接收状态标记	
 //如果想串口中断接收，请不要注释以下宏定义
-void uart_init(u32 bound);
+void uart1_init(u32 bound);
 
 void uart2_init(u32 bound);
 
+void uart4_init(u32 bound);
+
+void uart5_init(u32 bound);
+
 void btSend(const char *str,u8 length);
+
+void uart2Send(const char *str,u8 length);
+
+void uart4Send(const char *str,u8 length);
+
+void uart5Send(const char *str,u8 length);
 
 #endif
 

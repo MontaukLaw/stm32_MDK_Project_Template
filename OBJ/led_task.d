@@ -38,3 +38,6 @@
 .\obj\led_task.o: .\SYSTEM\tasks\door_task.h
 .\obj\led_task.o: .\HARDWARE\DOOR\door.h
 .\obj\led_task.o: .\SYSTEM\delay\delay.h
+.\obj\led_task.o: .\SYSTEM\sys\test.h
+.\obj\led_task.o: .\SYSTEM\tasks\com_task.h
+.\obj\led_task.o: .\HARDWARE\SENSOR\sensor.h

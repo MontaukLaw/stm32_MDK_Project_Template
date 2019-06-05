@@ -1,31 +1,32 @@
 #include "com_task.h"
-#define ID_INDEX   4
-#define CHK_INDEX   2 
-#define STATUS_IDEX 6
 
-#define ACK_LEN 8
-#define FW_VERSION_PACKAGE_LEN  10
-#define SN_PKG_LEN 20
-#define DOOR_STATUS_LEN 9
+//盒子总数
+#define MAX_BOX_NUMBER 26
 
-//首2, 校验, 包长度, id, cmd, 尾2
-char ACK_CMD[] = {0xff,0xff,0x12,0x02,0x00,0x30,0xfe,0xfe};
+extern u8 transFlagU2;
+extern u8 transFlag;
+extern u8 transFlagU4;
+extern u8 transFlagU5;
 
-//固件版本目前是1.1
-char FW_VERSION[] = {0xff,0xff,0x12,0x04,0x02,0x40,0x01,0x01,0xfe,0xfe};
-
-
-//序列号包,首2, 校验, 包长度, id, cmd, 尾2
-char SN[]={0xff,0xff,0x12,0x0e,0x00,0x50,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0xfe,0xfe};
-
-//全部门状态, 包长度是3 byte, id, cmd, status    
-char DOOR_STATUS[]={0xff,0xff,0x12,0x03,0x00,0x24,0x00,0xfe,0xfe};    
+extern u8 usartRecieveCounter;
+extern u8 usartRecieveCounterU2; 
+extern u8 usartRecieveCounterU4;
+extern u8 usartRecieveCounterU5;
 
 extern u8 msgFlag;
-extern u8 transFlag;
-extern u8 usartRecieveCounter;
 
-struct BLMSG
+extern u8 USART2_RX_BUF[USART_REC_LEN]; 
+extern u8 USART4_RX_BUF[USART_REC_LEN]; 
+extern u8 USART5_RX_BUF[USART_REC_LEN]; 
+
+extern char NOTE_INBOX_QCMD_MSG[];
+extern char BLINK_LED_CMD[];
+extern char TURNON_LED_CMD[];
+extern char TURNOFF_LED_CMD[];
+
+extern u8 SN[];
+
+extern struct BLMSG
 {
     u8 cmdBody[255];
     u8 length;
@@ -35,91 +36,73 @@ struct BLMSG
     u8 integrity;
 }blMsg;
 
-void transBLMsg(void){
-    u8 chk = 0;
-    u8 i = 0;    
-    if(USART_RX_BUF[0] == 0xFF && USART_RX_BUF[1] == 0xFF && USART_RX_BUF[usartRecieveCounter-2] == 0xFE && USART_RX_BUF[usartRecieveCounter-1] == 0xFE){
-        blMsg.chk = USART_RX_BUF[2];
-        blMsg.length = USART_RX_BUF[3];
-        blMsg.id = USART_RX_BUF[4];     
-        blMsg.cmd = USART_RX_BUF[5];       
-        //blMsg.cmdBody = &USART_RX_BUF[6];
-        for(i = 3; i < usartRecieveCounter - 2; i++){
-            chk = chk + USART_RX_BUF[i];
-            blMsg.cmdBody[i-3] = USART_RX_BUF[i+1];
-        }
-        if(chk == blMsg.chk){
-            
-            blMsg.integrity = 1;
-        }else{
- 
-            blMsg.integrity = 0;
-        }
-         
-    }else{
-
-        blMsg.integrity = 0;
-    }
-}
-
-void sendDoorsStatus(){
-    u8 i = 0;
-    u8 chk = 0;
-    //这里根据协议, 1是开.
-    u8 status = DoorSensor;
-    DOOR_STATUS[ID_INDEX] = blMsg.id;
-    DOOR_STATUS[STATUS_IDEX] = status;
-    
-    //校验计算的长度也要注意字符串长度.
-    for(i = 3;i< DOOR_STATUS_LEN - 2;i++){
-        chk = chk + DOOR_STATUS[i];
-    }
-    DOOR_STATUS[CHK_INDEX] = chk;
-    //发送Door状态的字符串
-    btSend(DOOR_STATUS,DOOR_STATUS_LEN);
-}
-
-void sendACK(void){
-    u8 i = 0;
-    u8 chk = 0;
-    ACK_CMD[ID_INDEX] = blMsg.id;
-    for(i = 3;i< ACK_LEN - 2;i++){
-        chk = chk + ACK_CMD[i];
-    }
-    ACK_CMD[CHK_INDEX] = chk;
-    btSend(ACK_CMD,ACK_LEN);
-}
-
-void sendFWVer(void){  
-   u8 i = 0;
-   u8 chk = 0; 
-   FW_VERSION[ID_INDEX] = blMsg.id;
-   
-   for(i=3;i< FW_VERSION_PACKAGE_LEN - 2;i++){
-       chk = chk + FW_VERSION[i];
-   }
-   FW_VERSION[CHK_INDEX] = chk;
-   btSend(FW_VERSION,FW_VERSION_PACKAGE_LEN);    
-}
-
-void sendSN(){
-    u8 i = 0;
-    u8 chk = 0; 
-    SN[ID_INDEX] = blMsg.id;
-    for(i=3; i < SN_PKG_LEN -2;i++){
-        chk = chk + SN[i];
-    }
-    SN[CHK_INDEX]=chk;
-    btSend(SN,SN_PKG_LEN);    
-}
-
 u8 blinkGridNumber = 0;
 u8 lightOnNumber = 0;
 u8 lightStatus = OFF;
 
-//灯控制
-void comAnalyze(void){
+void u245Analyze(void){
+    u8 boxNumber = 0 ;
+    u8 cmd = 0;
+    u8 boxStatus = 0;
+    u8 msgID = 0;
+ 
+    // 如果u2有消息    
+    if(transFlagU2 == TRANS_END)
+	{   
+        //不进行完整性检查
+        //ff ff 65 03 01 61 01 01 fe fe
+        cmd = USART2_RX_BUF[5];
+        msgID = USART2_RX_BUF[4];
+        //u2从25开始到52
+        boxNumber = USART2_RX_BUF[6] + MAX_BOX_NUMBER;
+        boxStatus = USART2_RX_BUF[7];
+        
+        //如果u2收到票检测结果
+        
+        //分析完后恢复初始状态, anyway
+        transFlagU2 = TRANS_NONE; 
+        usartRecieveCounterU2 = 0; 
+    } 
+   
+    // 如果u4有消息   
+    if(transFlagU4 == TRANS_END){
+        cmd = USART4_RX_BUF[5];
+        msgID = USART4_RX_BUF[4];
+        //u4从53开始到78
+        boxNumber = USART4_RX_BUF[6] + MAX_BOX_NUMBER * 2;
+        boxStatus = USART4_RX_BUF[7];
+        
+        //分析完后恢复初始状态, anyway
+        transFlagU4 = TRANS_NONE; 
+        usartRecieveCounterU4 = 0;
+    }
+ 
+    // 如果u5有消息   
+    if(transFlagU5 == TRANS_END){
+        cmd = USART5_RX_BUF[5];
+        msgID = USART5_RX_BUF[4];
+        //u5从79开始到102
+        boxNumber = USART5_RX_BUF[6] + MAX_BOX_NUMBER * 3;
+        boxStatus = USART5_RX_BUF[7];
+        
+        //分析完后恢复初始状态, anyway
+        transFlagU5 = TRANS_NONE; 
+        usartRecieveCounterU5 = 0;
+    }
+    
+    if(cmd == NOTE_INBOX_ACMD){            
+        sendCheckBoxMsgToBT(boxNumber,boxStatus,msgID);            
+    }
+}
 
+//通讯分析
+void comAnalyze(void){
+    u8 boxNumber = 0 ;
+    u8 boxStatus = 0; 
+    u8 slaveIndex = 0;
+
+    u245Analyze();  
+    
     if(transFlag == TRANS_END)
 	{   
         //填充blMsg struct
@@ -127,13 +110,39 @@ void comAnalyze(void){
         
         //检查数据完整性
         if (blMsg.integrity){
+            blinkGridNumber = blMsg.cmdBody[LED_NUMBER_INDEX_IN_MSG];
+            
+            //如果不是由主机处理
+            if(blinkGridNumber > MAX_BOX_NUMBER){
+                
+                slaveIndex = (blinkGridNumber - 1) / MAX_BOX_NUMBER;
+                boxNumber = blinkGridNumber % MAX_BOX_NUMBER;
+                if(boxNumber == 0){
+                    boxNumber = MAX_BOX_NUMBER;
+                }
+            }
+                        
             switch(blMsg.cmd){
                 case GRID_BLINK:
                     //先关
                     //allLedOff();
-                    lightStatus = BLINK;
-                    blinkGridNumber = blMsg.cmdBody[LED_NUMBER_INDEX_IN_MSG];
-                
+                    allOff();
+                                       
+                    //主机进行处理
+                    if(slaveIndex == 0){
+                        lightStatus = BLINK; 
+                    }else{
+                        sendSlaveMsg(slaveIndex, boxNumber, BLINK_LED_CMD, LED_TX_TO_SLAVE_LEN, LED_TX_TO_SLAVE_LEN);  
+                    }                
+                    
+                    //if(blinkGridNumber <= MAX_BOX_NUMBER){
+                        
+                        //lightStatus = BLINK; 
+                    //}else {
+                        //发给从机处理
+                        //sendSlaveMsg(slaveIndex,boxNumber,BLINK_LED_CMD,LED_TX_TO_SLAVE_LEN,LED_TX_TO_SLAVE_LEN);                        
+                    //}
+                   
                     //开灯命令都需要ACK
                     sendACK();
                 break;
@@ -142,13 +151,22 @@ void comAnalyze(void){
                     openDoor(blMsg.cmdBody[DOOR_NUMBER_INDEX_IN_MSG]);
                     //开门也需要ACK   
                     sendACK();
-                break;
+                break;                
                 
                 case TURN_OFF_LED:                   
-                    lightStatus = OFF;
+                    //lightStatus = OFF;
                     //allLedOff();
-                    blinkGridNumber = 0;
-                    allOff(); 
+                    //blinkGridNumber = 0;
+                    //turnOff(blMsg.cmdBody[LED_NUMBER_INDEX_IN_MSG]);
+                
+                     //主机进行处理
+                    if(slaveIndex == 0){
+                        lightStatus = OFF;
+                        allOff();
+                    }else{
+                        sendSlaveMsg(slaveIndex, boxNumber, TURNOFF_LED_CMD, LED_TX_TO_SLAVE_LEN, LED_TX_TO_SLAVE_LEN);  
+                    }    
+                
                     //开灯命令都需要ACK
                     sendACK();                    
                 break; 
@@ -157,10 +175,45 @@ void comAnalyze(void){
                     sendDoorsStatus();
                 break;
                 
+                case DOOR_STATUS_QCMD:
+                    break;
+                
+                //HJBL..查询盒子内是否有票
+                case NOTE_INBOX_QCMD:
+                    //获取要查询的盒子号码
+                    boxNumber=blMsg.cmdBody[LED_NUMBER_INDEX_IN_MSG];
+                    //检查是否查询本模组的盒子
+                    if(boxNumber <= MAX_BOX_NUMBER){
+                        //获取这个盒子内是否有票
+                        boxStatus = checkBox(boxNumber);
+                        //发送结果到BT
+                        sendCheckBoxMsgToBT(boxNumber,boxStatus,blMsg.id);
+                    //如果是27~52号, 就发到U2, 如果是                        
+                    }else{
+                        slaveIndex = boxNumber/MAX_BOX_NUMBER;
+                        boxNumber = boxNumber % MAX_BOX_NUMBER;
+                        if(boxNumber == 0){
+                            boxNumber = MAX_BOX_NUMBER;
+                        }
+                        //发送消息到U2, U4, U5
+                        sendSlaveMsg(slaveIndex, boxNumber, NOTE_INBOX_QCMD_MSG, LED_TX_TO_SLAVE_LEN,blMsg.id);
+                    
+                    }                    
+                                           
+                break;
+                
                 case GRID_LIGNT_ON:
                     //allLedOff();
-                    lightStatus = ALWAYS_ON;
-                    blinkGridNumber = blMsg.cmdBody[LED_NUMBER_INDEX_IN_MSG];
+                   
+                    //自己处理的部分
+                    if(slaveIndex == 0){
+                        lightStatus = ALWAYS_ON;
+                        blinkGridNumber = blMsg.cmdBody[LED_NUMBER_INDEX_IN_MSG];
+                        
+                    //外发
+                    }else{
+                        sendSlaveMsg(slaveIndex, boxNumber, TURNON_LED_CMD, LED_TX_TO_SLAVE_LEN, LED_TX_TO_SLAVE_LEN);  
+                    }    
                 
                     //开灯命令都需要ACK
                     sendACK();
@@ -190,6 +243,7 @@ void comAnalyze(void){
 void comTask(void){
     if(msgFlag == NEW_MSG){
         comAnalyze();
+        msgFlag = 0;
     }
 
 }
